@@ -14,7 +14,7 @@
             --accent: #00f5d4;
             --accent-glow: rgba(0, 245, 212, 0.4);
             --hex-empty: rgba(255, 255, 255, 0.03);
-            --hex-border: rgba(255, 255, 255, 0.08);
+            --hex-border: rgba(255, 255, 255, 0.773);
             --danger: #ff3366;
             --diamond: #00e5ff;
             --bomb: #ff6b35;
@@ -26,7 +26,7 @@
             --text-primary: #e8e8f0;
             --text-secondary: #8888a0;
             --hex-empty: rgba(255, 255, 255, 0.03);
-            --hex-border: rgba(255, 255, 255, 0.08);
+            --hex-border: rgba(255, 255, 255, 0.849);
         }
 
         html:not(.dark) {
@@ -191,6 +191,7 @@
         .hex {
             position: absolute;
             cursor: pointer;
+            scale: 1.1;
         }
 
         .hex polygon {
@@ -363,6 +364,11 @@
             font-size: 0.5rem;
             color: var(--accent);
             opacity: 0.7;
+            transition: opacity 0.3s;
+        }
+
+        .rotate-hint.hidden {
+            opacity: 0;
         }
 
         .pieces-container {
@@ -414,6 +420,10 @@
 
         .piece-wrapper.selected .rotate-btn,
         .piece-wrapper:hover .rotate-btn { opacity: 1; }
+
+        .rotate-btn.disabled {
+            display: none;
+        }
 
         .piece-svg { display: block; }
         .piece-hex polygon { stroke-width: 1.5; }
@@ -551,6 +561,112 @@
             z-index: 1000;
             opacity: 0.85;
         }
+
+        .difficulty-overlay {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            opacity: 1;
+            pointer-events: auto;
+            transition: opacity 0.4s ease;
+            background: rgba(10, 10, 15, 0.95);
+            backdrop-filter: blur(8px);
+        }
+
+        .difficulty-overlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .difficulty-content {
+            background: rgba(10, 10, 15, 0.92);
+            backdrop-filter: blur(8px);
+            border: 2px solid var(--accent);
+            border-radius: 20px;
+            padding: 32px 40px;
+            text-align: center;
+            box-shadow: 0 0 40px var(--accent-glow);
+            animation: modalAppear 0.4s ease;
+            max-width: 300px;
+            width: 90%;
+            position: relative;
+        }
+
+        .difficulty-game-title {
+            position: absolute;
+            top: calc(50% - 200px);
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 900;
+            letter-spacing: 3px;
+            background: linear-gradient(135deg, var(--accent) 0%, #7b61ff 50%, var(--danger) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            z-index: 101;
+            pointer-events: none;
+            white-space: nowrap;
+            transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.8s ease, font-size 0.8s ease, letter-spacing 0.8s ease;
+        }
+
+        .difficulty-game-title.fly-away {
+            pointer-events: none;
+        }
+
+        .difficulty-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.2rem;
+            color: var(--accent);
+            margin-bottom: 24px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .difficulty-options {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .difficulty-btn {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.85rem;
+            padding: 14px 24px;
+            border: 2px solid var(--text-secondary);
+            border-radius: 12px;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            background: transparent;
+            color: var(--text-primary);
+            transition: all 0.3s ease;
+        }
+
+        .difficulty-btn:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+            box-shadow: 0 0 15px var(--accent-glow);
+        }
+
+        .difficulty-btn.selected {
+            border-color: var(--accent);
+            background: linear-gradient(135deg, var(--accent), #7b61ff);
+            color: #000;
+            font-weight: 700;
+        }
+
+        .difficulty-description {
+            font-size: 0.6rem;
+            color: var(--text-secondary);
+            margin-top: 6px;
+            text-transform: none;
+            letter-spacing: 0;
+        }
     </style>
 </head>
 <body>
@@ -601,13 +717,30 @@
         <div class="pieces-area">
             <div class="pieces-header">
                 <div class="pieces-title">Drag to place</div>
-                <div class="rotate-hint">Tap to rotate ↻</div>
+                <div class="rotate-hint" id="rotateHint">Tap to rotate ↻</div>
             </div>
             <div class="pieces-container" id="pieces"></div>
         </div>
 
         <div class="controls">
             <button class="btn btn-secondary" id="restartBtn">Restart</button>
+        </div>
+
+        <div class="difficulty-overlay" id="difficultyOverlay">
+            <div class="difficulty-game-title" id="difficultyGameTitle">HEXAFORGE</div>
+            <div class="difficulty-content" id="difficultyContent">
+                <div class="difficulty-title">Выберите сложность</div>
+                <div class="difficulty-options">
+                    <button class="difficulty-btn" data-difficulty="easy">
+                        Легкая
+                        <div class="difficulty-description">С возможностью поворота фигур</div>
+                    </button>
+                    <button class="difficulty-btn" data-difficulty="hard">
+                        Сложная
+                        <div class="difficulty-description">Без поворота фигур</div>
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -624,8 +757,85 @@
             hexSize: 22,
             pieceHexSize: 11,
             diamondTimer: 8,
-            specialSpawnInterval: 3 // spawn special every N piece sets
+            specialSpawnInterval: 3, // spawn special every N piece sets
+            soundEnabled: true,
+            soundVolume: 0.5
         };
+
+        // Sound system
+        const SoundManager = {
+            sounds: {},
+            audioContext: null,
+            
+            init() {
+                if (!CONFIG.soundEnabled) return;
+                
+                try {
+                    this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                } catch (e) {
+                    console.warn('AudioContext not supported');
+                    CONFIG.soundEnabled = false;
+                }
+            },
+            
+            loadSound(name, path) {
+                if (!CONFIG.soundEnabled) return;
+                const audio = new Audio(path);
+                audio.volume = CONFIG.soundVolume;
+                audio.preload = 'auto';
+                this.sounds[name] = audio;
+            },
+            
+            play(name, options = {}) {
+                if (!CONFIG.soundEnabled || !this.sounds[name]) return;
+                
+                const audio = this.sounds[name].cloneNode();
+                if (options.volume !== undefined) {
+                    audio.volume = options.volume;
+                }
+                if (options.rate !== undefined) {
+                    audio.playbackRate = options.rate;
+                }
+                
+                audio.play().catch(e => {
+                    // Auto-play might be blocked, ignore
+                    if (e.name !== 'NotAllowedError') {
+                        console.warn('Sound play error:', e);
+                    }
+                });
+            },
+            
+            playRandom(names) {
+                if (!names || names.length === 0) return;
+                const randomName = names[Math.floor(Math.random() * names.length)];
+                this.play(randomName);
+            }
+        };
+
+        // Initialize sound system
+        SoundManager.init();
+        
+        // Load sounds
+        SoundManager.loadSound('grab_piece', 'sounds/grab_piece.mp3');
+        SoundManager.loadSound('place_piece', 'sounds/place_piece.mp3');
+        SoundManager.loadSound('rotate_piece', 'sounds/rotate_piece.mp3');
+        SoundManager.loadSound('button_click', 'sounds/button_click.mp3');
+        SoundManager.loadSound('title_fly', 'sounds/title_fly.mp3');
+        SoundManager.loadSound('game_over', 'sounds/game_over.mp3');
+        SoundManager.loadSound('clear_line', 'sounds/clear_line.mp3');
+        SoundManager.loadSound('clear_multiple', 'sounds/clear_multiple.mp3');
+        
+        // Bonus spawn sounds (expandable)
+        SoundManager.loadSound('bonus_spawn_1', 'sounds/bonus_spawn_1.mp3');
+        SoundManager.loadSound('bonus_spawn_2', 'sounds/bonus_spawn_2.mp3');
+        SoundManager.loadSound('bonus_spawn_3', 'sounds/bonus_spawn_3.mp3');
+        
+        // Bonus action sounds (expandable)
+        SoundManager.loadSound('bonus_diamond', 'sounds/bonus_diamond.mp3');
+        SoundManager.loadSound('bonus_bomb', 'sounds/bonus_bomb.mp3');
+        SoundManager.loadSound('bonus_combo', 'sounds/bonus_combo.mp3');
+        SoundManager.loadSound('bonus_streak', 'sounds/bonus_streak.mp3');
+        SoundManager.loadSound('bonus_multi', 'sounds/bonus_multi.mp3');
 
         const PIECE_COLORS = [
             { fill: '#00f5d4', stroke: '#00c4a7' },
@@ -661,7 +871,8 @@
             streak: 0,
             pieceSetCount: 0,
             isGameOver: false,
-            selectedPieceIndex: -1
+            selectedPieceIndex: -1,
+            difficulty: null // 'easy' or 'hard'
         };
 
         const HEX_DIRECTIONS = [[1, 0], [1, -1], [0, -1], [-1, 0], [-1, 1], [0, 1]];
@@ -676,6 +887,7 @@
         }
 
         function rotatePiece(piece) {
+            if (gameState.difficulty === 'hard') return; // Disable rotation in hard mode
             const anchor = piece.shape.cells[0];
             const newCells = piece.shape.cells.map(([q, r]) => {
                 const relQ = q - anchor[0], relR = r - anchor[1];
@@ -686,6 +898,7 @@
             piece.rotation = ((piece.rotation || 0) + 1) % 6;
             updatePieceVisual(piece);
             updatePiecesState();
+            SoundManager.play('rotate_piece');
         }
 
         function updatePieceVisual(piece) {
@@ -851,6 +1064,9 @@
                 timerEl.textContent = cell.timer;
                 cell.element.appendChild(timerEl);
             }
+            
+            // Play random bonus spawn sound
+            SoundManager.playRandom(['bonus_spawn_1', 'bonus_spawn_2', 'bonus_spawn_3']);
         }
 
         function removeSpecialVisual(cell) {
@@ -893,6 +1109,9 @@
 
                 const rotateBtn = document.createElement('button');
                 rotateBtn.className = 'rotate-btn';
+                if (gameState.difficulty === 'hard') {
+                    rotateBtn.classList.add('disabled');
+                }
                 rotateBtn.innerHTML = '↻';
                 rotateBtn.addEventListener('click', e => { e.stopPropagation(); rotatePiece(piece); });
                 rotateBtn.addEventListener('touchend', e => { e.stopPropagation(); e.preventDefault(); rotatePiece(piece); });
@@ -901,8 +1120,11 @@
                 const idx = i;
                 wrapper.addEventListener('click', () => {
                     if (piece.placed || piece.element.classList.contains('disabled')) return;
-                    if (gameState.selectedPieceIndex === idx) rotatePiece(piece);
-                    else selectPiece(idx);
+                    if (gameState.selectedPieceIndex === idx && gameState.difficulty === 'easy') {
+                        rotatePiece(piece);
+                    } else {
+                        selectPiece(idx);
+                    }
                 });
                 wrapper.addEventListener('mousedown', e => { if (!e.target.closest('.rotate-btn')) startDrag(e, idx); });
                 wrapper.addEventListener('touchstart', e => { if (!e.target.closest('.rotate-btn')) startDrag(e, idx); }, { passive: false });
@@ -979,6 +1201,7 @@
             piece.element.classList.add('hidden');
             gameState.selectedPieceIndex = -1;
 
+            SoundManager.play('place_piece');
             tickDiamondTimers();
 
             setTimeout(() => {
@@ -1048,6 +1271,7 @@
             if (lineTypes.size >= 2) {
                 showBonus(`⚡ ${lineTypes.size}x MULTI!`, 'combo');
                 gameState.score += lineTypes.size * 200;
+                SoundManager.play('bonus_multi');
             }
 
             if (cleared > 1) {
@@ -1078,9 +1302,16 @@
                 });
                 showBonus('💎 DIAMOND BLAST!', 'diamond');
                 gameState.score += diamondCells.length * 300;
+                SoundManager.play('bonus_diamond');
             }
 
             if (toClear.size > 0) {
+                // Play clear sound based on number of lines
+                if (cleared === 1) {
+                    SoundManager.play('clear_line');
+                } else {
+                    SoundManager.play('clear_multiple');
+                }
                 const clearArray = Array.from(toClear);
                 clearArray.forEach((key, index) => {
                     const cell = gameState.board.get(key);
@@ -1197,6 +1428,7 @@
 
             showBonus('💣 SHUFFLE!', 'bomb');
             gameState.score += 150;
+            SoundManager.play('bonus_bomb');
         }
 
         function showBonus(text, type) {
@@ -1205,6 +1437,13 @@
             el.textContent = text;
             document.body.appendChild(el);
             setTimeout(() => el.remove(), 1000);
+            
+            // Play bonus sound based on type
+            if (type === 'combo') {
+                SoundManager.play('bonus_combo');
+            } else if (type === 'streak') {
+                SoundManager.play('bonus_streak');
+            }
         }
 
         function showScorePopup(pts) {
@@ -1230,6 +1469,7 @@
                 document.getElementById('finalScore').textContent = gameState.score;
                 document.getElementById('boardWrapper').classList.add('game-over');
                 document.getElementById('gameOverOverlay').classList.add('visible');
+                SoundManager.play('game_over');
             }
         }
 
@@ -1261,6 +1501,8 @@
 
             piece.element.classList.add('dragging');
             moveGhost(touch.clientX, touch.clientY);
+            
+            SoundManager.play('grab_piece');
 
             document.addEventListener('mousemove', onDrag);
             document.addEventListener('mouseup', endDrag);
@@ -1331,7 +1573,117 @@
             drag = { piece: null, ghost: null, hovered: null };
         }
 
+        function updateDifficultyUI() {
+            const rotateHint = document.getElementById('rotateHint');
+            if (gameState.difficulty === 'hard') {
+                rotateHint.classList.add('hidden');
+            } else {
+                rotateHint.classList.remove('hidden');
+            }
+
+            // Update rotate buttons for existing pieces
+            gameState.pieces.forEach(piece => {
+                if (piece.element) {
+                    const rotateBtn = piece.element.querySelector('.rotate-btn');
+                    if (rotateBtn) {
+                        if (gameState.difficulty === 'hard') {
+                            rotateBtn.classList.add('disabled');
+                        } else {
+                            rotateBtn.classList.remove('disabled');
+                        }
+                    }
+                }
+            });
+        }
+
+        function selectDifficulty(difficulty) {
+            gameState.difficulty = difficulty;
+            
+            const overlay = document.getElementById('difficultyOverlay');
+            const title = document.getElementById('difficultyGameTitle');
+            const header = document.querySelector('header h1');
+            
+            // Get positions
+            const titleRect = title.getBoundingClientRect();
+            const headerRect = header.getBoundingClientRect();
+            
+            // Calculate transform to move title to header position
+            const deltaX = headerRect.left + headerRect.width / 2 - (titleRect.left + titleRect.width / 2);
+            const deltaY = headerRect.top + headerRect.height / 2 - (titleRect.top + titleRect.height / 2);
+            
+            // Get final size (header size)
+            const finalFontSize = parseFloat(getComputedStyle(header).fontSize);
+            const finalLetterSpacing = parseFloat(getComputedStyle(header).letterSpacing);
+            
+            // Hide popup content immediately
+            const content = document.getElementById('difficultyContent');
+            content.style.opacity = '0';
+            content.style.transition = 'opacity 0.3s ease';
+            
+            // Animate title - keep it visible during flight
+            title.classList.add('fly-away');
+            title.style.transform = `translate(calc(-50% + ${deltaX}px), calc(-50% + ${deltaY}px))`;
+            title.style.fontSize = finalFontSize + 'px';
+            title.style.letterSpacing = finalLetterSpacing + 'px';
+            title.style.opacity = '1'; // Keep visible during flight
+            
+            SoundManager.play('title_fly');
+            
+            // Hide title only at the end when it reaches destination
+            setTimeout(() => {
+                title.style.opacity = '0';
+                
+                // Hide overlay after title disappears
+                setTimeout(() => {
+                    overlay.classList.add('hidden');
+                    title.classList.remove('fly-away');
+                    title.style.transform = '';
+                    title.style.fontSize = '';
+                    title.style.letterSpacing = '';
+                    title.style.opacity = '';
+                    content.style.opacity = '';
+                    content.style.transition = '';
+                    
+                    updateDifficultyUI();
+                    if (gameState.isGameOver) {
+                        resetGame();
+                    } else {
+                        calculateSizes();
+                        initBoard();
+                        generatePieces();
+                        updateUI();
+                    }
+                }, 200); // Small delay to let title fade out
+            }, 800); // When title reaches destination
+        }
+
+        function showDifficultySelection() {
+            const overlay = document.getElementById('difficultyOverlay');
+            const content = document.getElementById('difficultyContent');
+            const title = document.getElementById('difficultyGameTitle');
+            
+            // Reset styles
+            title.classList.remove('fly-away');
+            title.style.transform = '';
+            title.style.fontSize = '';
+            title.style.letterSpacing = '';
+            title.style.opacity = '';
+            content.style.opacity = '';
+            content.style.transition = '';
+            
+            overlay.classList.remove('hidden');
+            // Update button states
+            document.querySelectorAll('.difficulty-btn').forEach(btn => {
+                btn.classList.toggle('selected', btn.dataset.difficulty === gameState.difficulty);
+            });
+        }
+
         function resetGame() {
+            if (!gameState.difficulty) {
+                showDifficultySelection();
+                return;
+            }
+
             gameState.board.clear();
             gameState.pieces = [];
             gameState.score = 0;
@@ -1348,10 +1700,30 @@
             initBoard();
             generatePieces();
             updateUI();
+            updateDifficultyUI();
         }
 
-        document.getElementById('restartBtn').addEventListener('click', resetGame);
-        document.getElementById('playAgainBtn').addEventListener('click', resetGame);
+        // Difficulty selection handlers
+        document.querySelectorAll('.difficulty-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                SoundManager.play('button_click');
+                const difficulty = btn.dataset.difficulty;
+                selectDifficulty(difficulty);
+            });
+        });
+
+        document.getElementById('restartBtn').addEventListener('click', () => {
+            SoundManager.play('button_click');
+            if (gameState.difficulty) {
+                resetGame();
+            } else {
+                showDifficultySelection();
+            }
+        });
+        document.getElementById('playAgainBtn').addEventListener('click', () => {
+            SoundManager.play('button_click');
+            showDifficultySelection();
+        });
 
         let resizeTimer;
         window.addEventListener('resize', () => {
@@ -1410,15 +1782,22 @@
 
                         const rotateBtn = document.createElement('button');
                         rotateBtn.className = 'rotate-btn';
+                        if (gameState.difficulty === 'hard') {
+                            rotateBtn.classList.add('disabled');
+                        }
                         rotateBtn.innerHTML = '↻';
                         rotateBtn.addEventListener('click', e => { e.stopPropagation(); rotatePiece(piece); });
+                        rotateBtn.addEventListener('touchend', e => { e.stopPropagation(); e.preventDefault(); rotatePiece(piece); });
                         wrapper.appendChild(rotateBtn);
 
                         const idx = i;
                         wrapper.addEventListener('click', () => {
                             if (piece.placed || piece.element.classList.contains('disabled')) return;
-                            if (gameState.selectedPieceIndex === idx) rotatePiece(piece);
-                            else selectPiece(idx);
+                            if (gameState.selectedPieceIndex === idx && gameState.difficulty === 'easy') {
+                                rotatePiece(piece);
+                            } else {
+                                selectPiece(idx);
+                            }
                         });
                         wrapper.addEventListener('mousedown', e => { if (!e.target.closest('.rotate-btn')) startDrag(e, idx); });
                         wrapper.addEventListener('touchstart', e => { if (!e.target.closest('.rotate-btn')) startDrag(e, idx); }, { passive: false });
@@ -1435,7 +1814,7 @@
 
         requestAnimationFrame(() => {
             requestAnimationFrame(() => {
-                resetGame();
+                showDifficultySelection();
             });
         });
     </script>
