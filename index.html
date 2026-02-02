@@ -667,6 +667,29 @@
             text-transform: none;
             letter-spacing: 0;
         }
+
+        .menu-back-btn {
+            margin-top: 20px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.75rem;
+            padding: 10px 20px;
+            border: 2px solid var(--text-secondary);
+            border-radius: 10px;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            background: transparent;
+            color: var(--text-secondary);
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .menu-back-btn:hover {
+            border-color: var(--text-primary);
+            color: var(--text-primary);
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
+        }
     </style>
 </head>
 <body>
@@ -740,6 +763,9 @@
                         <div class="difficulty-description">Без поворота фигур</div>
                     </button>
                 </div>
+                <a href="https://shakiller.github.io/hex_game_collection/" class="menu-back-btn" id="menuBackBtn">
+                    ← Вернуться в меню
+                </a>
             </div>
         </div>
     </div>
@@ -1710,6 +1736,12 @@
                 const difficulty = btn.dataset.difficulty;
                 selectDifficulty(difficulty);
             });
+        });
+
+        // Menu back button
+        document.getElementById('menuBackBtn').addEventListener('click', (e) => {
+            SoundManager.play('button_click');
+            // Allow navigation to proceed
         });
 
         document.getElementById('restartBtn').addEventListener('click', () => {
